@@ -2,16 +2,28 @@ machine:
   java:
     version:
       oraclejdk8
+  environment:
+    _JAVA_OPTIONS: "-Xmx512m"
+    GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx512m -XX:+HeapDumpOnOutOfMemoryError"'
 
 dependencies:
   override:
     - export TERM="dumb"; ./gradlew compileTestJava
+    - sudo pip install sphinx sphinx_rtd_theme
   cache_directories:
     - ~/.gradle
 
 test:
   override:
-    - ./gradlew -Dorg.gradle.jvmargs=-Xmx512m --max-workers 2 check
+    - ./scripts/circle-ci/run-circle-tests.sh:
+        parallel: true
   post:
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/build/test-results/TEST-.*\.xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+
+deployment:
+  github-pages:
+    branch: develop
+    owner: palantir
+    commands:
+      - ./scripts/circle-ci/publish-github-page.sh
